@@ -1,0 +1,14 @@
+# Build artifacts
+build/
+*.o
+*.d
+*.a
+*.elf
+*.bin
+*.hex
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
