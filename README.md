@@ -1,5 +1,7 @@
 # DroneInspector
 
+開発者: 近藤悠太 (Kondo Yuta)
+
 狭小空間インフラを対象とした、**Sony Spresense ベースのドローン搭載点検支援システム**です。  
 本システムは、カメラ画像を機体側で処理して損傷候補を一次検出し、必要な情報のみを **microSD に保存**、**BLE1507（NUS firmware）経由で通知**することを目的としています。  
 また、**SpresenseマルチIMU Add-onボード（CXD5602PWBIMU1J）** を用いて、画像取得時の機体状態も記録します。
