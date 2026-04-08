@@ -1,9 +1,9 @@
 # DroneInspector
 
+開発者: 近藤悠太
+
 DroneInspector は、狭小インフラ空間を対象にした Sony Spresense ベースの点検支援システムです。
 機体側で画像取得、IMU 記録、microSD 保存、BLE 通知を行い、軽量なエッジ処理で点検作業を補助します。
-
-開発者: 近藤悠太
 
 ## 概要
 
