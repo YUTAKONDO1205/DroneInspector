@@ -7,14 +7,14 @@
 #include "../../core/config.h"
 
 // ============================================================
-// BLE1507 (NUS firmware) over UART2
+// UART2 経由の BLE1507 (NUS firmware)
 // ============================================================
-// Assumption:
-// - BLE1507 is already flashed with NUS firmware
-// - Spresense communicates with BLE1507 via Serial2
-// - UART setting: 115200, 8N1
+// 前提:
+// - BLE1507 には NUS firmware が書き込まれている
+// - Spresense は Serial2 で BLE1507 と通信する
+// - UART 設定は 115200, 8N1
 //
-// Event format example:
+// イベント送信例:
 // DET,RUN01,12,15324,0.87,IMG_000012.JPG,0.99,0.02
 // ============================================================
 
@@ -33,6 +33,10 @@ void initBle() {
 #if ENABLE_SERIAL_DEBUG
   Serial.println("[ble] BLE1507 NUS via Serial2 initialized");
 #endif
+}
+
+bool isBleReady() {
+  return ENABLE_BLE && g_bleInitialized;
 }
 
 bool bleWriteRaw(const uint8_t* data, size_t len) {
@@ -93,9 +97,8 @@ void blePoll() {
     return;
   }
 
-  // Optional:
-  // Forward received data from BLE side to USB serial monitor.
-  // Useful for debugging smartphone/app messages.
+  // BLE 側からの受信データを USB シリアルモニタへ転送する。
+  // スマートフォンやアプリ側のデバッグに便利。
   while (Serial2.available() > 0) {
     int c = Serial2.read();
 

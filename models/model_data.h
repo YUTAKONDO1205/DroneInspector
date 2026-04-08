@@ -2,6 +2,6 @@
 
 #include <stdint.h>
 
-// TFLite model byte array
+// TFLite モデルのバイト配列
 extern const unsigned char g_model_data[];
 extern const unsigned int g_model_data_len;

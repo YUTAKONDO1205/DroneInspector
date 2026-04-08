@@ -4,8 +4,9 @@
 void initCamera();
 bool isCameraReady();
 
-ImageBuffer captureInferenceFrame(); // raw RGB888, 128x128x3
-ImageBuffer captureJpeg();           // JPEG bytes for saving
+ImageBuffer captureJpeg();
+ImageBuffer captureInferenceFrame();
+ImageBuffer captureImage();  // 既存コード向けの JPEG 取得互換エイリアス。
 
 void releaseImage(ImageBuffer& img);
 void endCamera();

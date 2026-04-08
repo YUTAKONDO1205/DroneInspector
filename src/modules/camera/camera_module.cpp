@@ -8,20 +8,19 @@
 #include "../../core/config.h"
 
 // ============================================================
-// Camera module for Spresense HDR Camera Board
-// Current policy:
-// - Use still JPEG capture first
-// - Keep implementation simple and stable
-// - Copy camera buffer into heap memory so the caller can own it
+// Spresense HDR Camera Board 用カメラモジュール
+// 現在の方針:
+// - まずは静止画 JPEG 取得を優先する
+// - 実装はできるだけ単純で安定した形にする
+// - 呼び出し側が安全に扱えるよう、カメラバッファはヒープへコピーする
 // ============================================================
 
 namespace {
   bool g_cameraReady = false;
 
-  // Start conservative.
-  // QVGA is light enough for early integration and debugging.
-  constexpr int kStillWidth  = CAM_IMGSIZE_QVGA_H;   // 320
-  constexpr int kStillHeight = CAM_IMGSIZE_QVGA_V;   // 240
+  // 初期統合とデバッグを優先して、まずは軽めの QVGA で運用する。
+  constexpr int kStillWidth = CAM_IMGSIZE_QVGA_H;   // 320
+  constexpr int kStillHeight = CAM_IMGSIZE_QVGA_V;  // 240
 
   void printCamError(const char* label, CamErr err) {
 #if ENABLE_SERIAL_DEBUG
@@ -33,6 +32,57 @@ namespace {
     (void)label;
     (void)err;
 #endif
+  }
+
+  ImageBuffer captureStillJpeg() {
+    ImageBuffer out = {};
+
+    if (!g_cameraReady) {
+#if ENABLE_SERIAL_DEBUG
+      Serial.println("[camera] capture skipped: camera not ready");
+#endif
+      return out;
+    }
+
+    CamImage img = theCamera.takePicture();
+    if (!img.isAvailable()) {
+#if ENABLE_SERIAL_DEBUG
+      Serial.println("[camera] takePicture returned unavailable image");
+#endif
+      return out;
+    }
+
+    const uint8_t* src = reinterpret_cast<const uint8_t*>(img.getImgBuff());
+    const size_t srcSize = img.getImgSize();
+
+    if (src == nullptr || srcSize == 0) {
+#if ENABLE_SERIAL_DEBUG
+      Serial.println("[camera] invalid image buffer");
+#endif
+      return out;
+    }
+
+    uint8_t* copied = static_cast<uint8_t*>(malloc(srcSize));
+    if (copied == nullptr) {
+#if ENABLE_SERIAL_DEBUG
+      Serial.println("[camera] malloc failed");
+#endif
+      return out;
+    }
+
+    memcpy(copied, src, srcSize);
+
+    out.data = copied;
+    out.size = srcSize;
+    out.width = kStillWidth;
+    out.height = kStillHeight;
+
+#if ENABLE_SERIAL_DEBUG
+    Serial.print("[camera] captured JPEG bytes=");
+    Serial.println(static_cast<unsigned long>(out.size));
+#endif
+
+    return out;
   }
 }
 
@@ -48,7 +98,6 @@ void initCamera() {
     return;
   }
 
-  // JPEG still image format
   err = theCamera.setStillPictureImageFormat(
     kStillWidth,
     kStillHeight,
@@ -76,56 +125,18 @@ bool isCameraReady() {
   return g_cameraReady;
 }
 
+ImageBuffer captureJpeg() {
+  return captureStillJpeg();
+}
+
+ImageBuffer captureInferenceFrame() {
+  // 推論用の生画像経路はまだ未実装。
+  // 空バッファを返して、上位層で保存 / ログのフォールバックへ回す。
+  return {};
+}
+
 ImageBuffer captureImage() {
-  ImageBuffer out = {};
-
-  if (!g_cameraReady) {
-#if ENABLE_SERIAL_DEBUG
-    Serial.println("[camera] capture skipped: camera not ready");
-#endif
-    return out;
-  }
-
-  CamImage img = theCamera.takePicture();
-
-  if (!img.isAvailable()) {
-#if ENABLE_SERIAL_DEBUG
-    Serial.println("[camera] takePicture returned unavailable image");
-#endif
-    return out;
-  }
-
-  const uint8_t* src = reinterpret_cast<const uint8_t*>(img.getImgBuff());
-  const size_t srcSize = img.getImgSize();
-
-  if (src == nullptr || srcSize == 0) {
-#if ENABLE_SERIAL_DEBUG
-    Serial.println("[camera] invalid image buffer");
-#endif
-    return out;
-  }
-
-  uint8_t* copied = static_cast<uint8_t*>(malloc(srcSize));
-  if (copied == nullptr) {
-#if ENABLE_SERIAL_DEBUG
-    Serial.println("[camera] malloc failed");
-#endif
-    return out;
-  }
-
-  memcpy(copied, src, srcSize);
-
-  out.data = copied;
-  out.size = srcSize;
-  out.width = kStillWidth;
-  out.height = kStillHeight;
-
-#if ENABLE_SERIAL_DEBUG
-  Serial.print("[camera] captured JPEG bytes=");
-  Serial.println(static_cast<unsigned long>(out.size));
-#endif
-
-  return out;
+  return captureJpeg();
 }
 
 void releaseImage(ImageBuffer& img) {
